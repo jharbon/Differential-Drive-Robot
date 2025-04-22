@@ -5,12 +5,13 @@
     <xacro:property name="CHASSIS_LENGTH" value="0.15"/>  <!-- Along x axis -->
     <xacro:property name="CHASSIS_WIDTH" value="0.10"/>  <!-- Along y axis -->
     <xacro:property name="CHASSIS_HEIGHT" value="0.10"/>  <!-- Along z axis -->
-    <xacro:property name="CHASSIS_MASS" value="0.5"/>
+    <xacro:property name="CHASSIS_MASS" value="2.0"/>
     <!-- Driven wheel constants with offset from chassis included in each joint origin -->
     <xacro:property name="DRIVEN_WHEEL_RADIUS" value="0.03"/>
     <xacro:property name="DRIVEN_WHEEL_WIDTH" value="0.015"/>
+    <xacro:property name="DRIVEN_WHEEL_OFFSET" value="0.01"/>
     <xacro:property name="DRIVEN_WHEEL_JOINT_X" value="${-CHASSIS_LENGTH / 4}"/>
-    <xacro:property name="DRIVEN_WHEEL_JOINT_Y_ABS" value="${CHASSIS_WIDTH / 2 + 0.01}"/>  <!-- Use as +ve for LHS and -ve for RHS -->
+    <xacro:property name="DRIVEN_WHEEL_JOINT_Y_ABS" value="${CHASSIS_WIDTH / 2 + DRIVEN_WHEEL_OFFSET}"/>  <!-- Use as +ve for LHS and -ve for RHS -->
     <xacro:property name="DRIVEN_WHEEL_JOINT_Z" value="${-CHASSIS_HEIGHT / 2}"/>
     <xacro:property name="DRIVEN_WHEEL_MASS" value="0.1"/>
     <!-- Caster constants (JOINT_Y left out because the joint is centered along chassis width) -->
@@ -65,7 +66,7 @@
         </xacro:if>
 
         <xacro:property name="joint_y" value="${sign * DRIVEN_WHEEL_JOINT_Y_ABS}"/>
-        <xacro:property name="joint_roll" value="${-sign * (math.pi / 2)}"/>  <!-- Orient the wheel correctly -->
+        <xacro:property name="joint_roll" value="${-math.pi / 2}"/>  <!-- Orient the wheel correctly for differential drive kinematics -->
 
         <!-- Driven wheel -->
         <link name="${prefix}_wheel_link">
@@ -152,7 +153,22 @@
     <joint name="chassis_to_caster_joint" type="fixed">
         <parent link="chassis_link"/>
         <child link="caster_link"/>
-        <origin xyz="${CASTER_JOINT_X} 0 ${CASTER_JOINT_Z}" rpy="${math.pi / 2} 0 0"/>
+        <origin xyz="${CASTER_JOINT_X} 0 ${CASTER_JOINT_Z}" rpy="${-math.pi / 2} 0 0"/>
     </joint>
+
+    <gazebo reference="caster_link">
+        <mu1 value="0.001"/>
+        <mu2 value="0.001"/>
+    </gazebo>
+
+    <!-- Use custom differential drive kinematics plugin with driven wheel joint names as parameters -->
+    <gazebo>
+        <plugin name="custom::DiffDrivePlugin" filename="libCustomDiffDrivePlugin.so">
+            <left_wheel_joint_name>chassis_to_left_wheel_joint</left_wheel_joint_name>
+            <right_wheel_joint_name>chassis_to_right_wheel_joint</right_wheel_joint_name>
+            <wheel_radius>${DRIVEN_WHEEL_RADIUS}</wheel_radius>
+            <wheels_separation>${2 * DRIVEN_WHEEL_JOINT_Y_ABS}</wheels_separation>
+        </plugin>
+    </gazebo>
 
 </robot>
