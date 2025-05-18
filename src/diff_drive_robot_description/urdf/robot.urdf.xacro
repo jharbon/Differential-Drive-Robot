@@ -1,6 +1,13 @@
 <?xml version="1.0"?>
 <robot name="diff_drive_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+    <!-- Declare optional controllers config path which points to parameters YAML -->
+    <xacro:arg name="controllers_config_path" default=""/>
+    <!-- Promote it to a property for use in expressions -->
+    <xacro:property name="controllers_config_path" value="$(arg controllers_config_path)"/>
+    <!-- Define control-related tags only if path to the YAML is non-empty -->
+    <xacro:property name="use_control" value="${controllers_config_path != ''}"/>
+
     <!-- Chassis constants -->
     <xacro:property name="CHASSIS_LENGTH" value="0.15"/>  <!-- Along x axis -->
     <xacro:property name="CHASSIS_WIDTH" value="0.10"/>  <!-- Along y axis -->
@@ -20,7 +27,7 @@
     <xacro:property name="CASTER_JOINT_Z" value="${-CHASSIS_HEIGHT / 2 - (DRIVEN_WHEEL_RADIUS - CASTER_RADIUS)}"/> <!-- Caster will touch the ground and leave a gap from the chassis -->
     <xacro:property name="CASTER_MASS" value="0.05"/>
     <!-- Constants for dynamics and motors -->
-    <xacro:property name="MAX_LINEAR_VELOCITY" value="1.0"/>  <!-- m/s - Use with wheel radius to calculate corresponding max angular velocity -->
+    <xacro:property name="MAX_LINEAR_VELOCITY" value="0.5"/>  <!-- m/s - Use with wheel radius to calculate corresponding max angular velocity -->
     <xacro:property name="MOTOR_MAX_TORQUE" value="0.5"/>  <!-- Nm -->
 
     <xacro:macro name="cylinder_inertial" params="radius length mass">
@@ -96,6 +103,17 @@
             <axis xyz="0 0 1"/>
             <limit effort="${MOTOR_MAX_TORQUE}" velocity="${MAX_LINEAR_VELOCITY / DRIVEN_WHEEL_RADIUS}"/>
         </joint>
+
+        <xacro:if value="${use_control}">
+            <!-- Transmission for control -->
+            <transmission name="${prefix}_wheel_trans">
+                <type>transmission_interface/SimpleTransmission</type>
+                <joint name="chassis_to_${prefix}_wheel_joint"/>
+                <actuator name="${prefix}_motor">
+                    <mechanicalReduction>1</mechanicalReduction>
+                </actuator>
+            </transmission>
+        </xacro:if>
     
     </xacro:macro>
 
@@ -156,19 +174,44 @@
         <origin xyz="${CASTER_JOINT_X} 0 ${CASTER_JOINT_Z}" rpy="${-math.pi / 2} 0 0"/>
     </joint>
 
+    <!-- Set friction coefficients for driven wheels and caster -->
+    <gazebo reference="left_wheel_link">
+        <mu1 value="1.0"/>
+        <mu2 value="1.0"/>
+    </gazebo>
+    <gazebo reference="right_wheel_link">
+        <mu1 value="1.0"/>
+        <mu2 value="1.0"/>
+    </gazebo>
     <gazebo reference="caster_link">
         <mu1 value="0.001"/>
         <mu2 value="0.001"/>
     </gazebo>
 
-    <!-- Use custom differential drive kinematics plugin with driven wheel joint names as parameters -->
-    <gazebo>
-        <plugin name="custom::DiffDrivePlugin" filename="libCustomDiffDrivePlugin.so">
-            <left_wheel_joint_name>chassis_to_left_wheel_joint</left_wheel_joint_name>
-            <right_wheel_joint_name>chassis_to_right_wheel_joint</right_wheel_joint_name>
-            <wheel_radius>${DRIVEN_WHEEL_RADIUS}</wheel_radius>
-            <wheels_separation>${2 * DRIVEN_WHEEL_JOINT_Y_ABS}</wheels_separation>
-        </plugin>
-    </gazebo>
+    <xacro:if value="${use_control}">
+        <ros2_control name="GazeboSimSystem" type="system">
+            <hardware>
+                <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+            </hardware>
+            <joint name="chassis_to_left_wheel_joint">
+                <command_interface name="velocity"/>
+                <state_interface name="velocity"/>
+                <state_interface name="position"/>
+            </joint>
+            <joint name="chassis_to_right_wheel_joint">
+                <command_interface name="velocity"/>
+                <state_interface name="velocity"/>
+                <state_interface name="position"/>
+            </joint>
+        </ros2_control>
+    </xacro:if>
+
+    <xacro:if value="${use_control}">
+        <gazebo>
+            <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+                <parameters>${controllers_config_path}</parameters>
+            </plugin>
+        </gazebo>
+    </xacro:if>
 
 </robot>

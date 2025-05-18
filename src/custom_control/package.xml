@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>diff_drive_robot_description</name>
+  <name>custom_control</name>
   <version>0.1.0</version>
-  <description>URDF and launch files for displaying and simulating the differential drive robot</description>
+  <description>Custom controller implementations, ros2_control config files, and controller launch scripts</description>
   <maintainer email="jharbon299@gmail.com">James Harbon</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <exec_depend>xacro</exec_depend>
-  <exec_depend>robot_state_publisher</exec_depend>
-  <exec_depend>joint_state_publisher_gui</exec_depend>
-  <exec_depend>ros_gz_sim</exec_depend>
-  <exec_depend>ros_gz_bridge</exec_depend>
-  <exec_depend>gz_ros2_control</exec_depend>
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+
+  <exec_depend>controller_manager</exec_depend>
+  <exec_depend>diff_drive_robot_description</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
