@@ -1,0 +1,21 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- Constants for dynamics and motors -->
+    <xacro:property name="MAX_LINEAR_VELOCITY" value="0.5"/>  <!-- m/s - Use with wheel radius to calculate corresponding max angular velocity -->
+    <xacro:property name="MOTOR_MAX_TORQUE" value="0.5"/>  <!-- Nm -->
+
+    <!-- Set friction coefficients for driven wheels and caster -->
+    <gazebo reference="left_wheel_link">
+        <mu1 value="1.0"/>
+        <mu2 value="1.0"/>
+    </gazebo>
+    <gazebo reference="right_wheel_link">
+        <mu1 value="1.0"/>
+        <mu2 value="1.0"/>
+    </gazebo>
+    <gazebo reference="caster_link">
+        <mu1 value="0.001"/>
+        <mu2 value="0.001"/>
+    </gazebo>
+
+</robot>

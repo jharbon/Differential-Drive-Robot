@@ -1,0 +1,39 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- Cylinder inertial tag with mass and moment of intertia matrix -->
+    <xacro:macro name="cylinder_inertial" params="radius length mass">
+        <inertial>
+            <mass value="${mass}"/>
+            <inertia
+                ixx="${(mass * (3 * radius**2 + length**2)) / 12}" ixy="0" ixz="0"
+                iyy="${(mass * (3 * radius**2 + length**2)) / 12}" iyz="0"
+                izz="${(mass * radius**2) / 2}"
+            />
+        </inertial>
+    </xacro:macro>
+
+    <!-- Cuboid inertial tag with mass and moment of intertia matrix -->
+    <xacro:macro name="box_inertial" params="length width height mass">
+        <inertial>
+            <mass value="${mass}"/>
+            <inertia
+                ixx="${(mass * (width**2 + height**2)) / 12}" ixy="0" ixz="0"
+                iyy="${(mass * (length**2 + height**2)) / 12}" iyz="0"
+                izz="${(mass * (length**2 + width**2)) / 12}"
+            />
+        </inertial>
+    </xacro:macro>
+
+    <!-- Sphere inertial tag with mass and moment of intertia matrix -->
+    <xacro:macro name="sphere_inertial" params="radius mass">
+        <inertial>
+            <mass value="${mass}"/>
+            <inertia
+                ixx="${(2 / 5) * mass * radius**2}" ixy="0" ixz="0"
+                iyy="${(2 / 5) * mass * radius**2}" iyz="0"
+                izz="${(2 / 5) * mass * radius**2}"
+            />
+        </inertial>
+    </xacro:macro>
+
+</robot>

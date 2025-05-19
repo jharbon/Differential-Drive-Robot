@@ -1,0 +1,69 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:include filename="physics.xacro"/>
+    <xacro:include filename="macros.xacro"/>
+
+    <!-- Driven wheel constants with offset from chassis included in each joint origin -->
+    <xacro:property name="DRIVEN_WHEEL_RADIUS" value="0.03"/>
+    <xacro:property name="DRIVEN_WHEEL_WIDTH" value="0.015"/>
+    <xacro:property name="DRIVEN_WHEEL_OFFSET" value="0.01"/>
+    <xacro:property name="DRIVEN_WHEEL_JOINT_X" value="${-CHASSIS_LENGTH / 4}"/>
+    <xacro:property name="DRIVEN_WHEEL_JOINT_Y_ABS" value="${CHASSIS_WIDTH / 2 + DRIVEN_WHEEL_OFFSET}"/>  <!-- Use as +ve for LHS and -ve for RHS -->
+    <xacro:property name="DRIVEN_WHEEL_JOINT_Z" value="${-CHASSIS_HEIGHT / 2}"/>
+    <xacro:property name="DRIVEN_WHEEL_MASS" value="0.1"/>
+
+    <xacro:macro name="driven_wheel" params="prefix use_control">
+
+        <xacro:if value="${prefix == 'left'}">
+            <xacro:property name="sign" value="1"/>
+        </xacro:if>
+        <xacro:if value="${prefix == 'right'}">
+            <xacro:property name="sign" value="-1"/>
+        </xacro:if>
+
+        <xacro:property name="joint_y" value="${sign * DRIVEN_WHEEL_JOINT_Y_ABS}"/>
+        <xacro:property name="joint_roll" value="${-math.pi / 2}"/>  <!-- Orient the wheel correctly for differential drive kinematics -->
+
+        <!-- Driven wheel -->
+        <link name="${prefix}_wheel_link">
+            <xacro:cylinder_inertial radius="${DRIVEN_WHEEL_RADIUS}" length="${DRIVEN_WHEEL_WIDTH}" mass="${DRIVEN_WHEEL_MASS}"/>
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder length="${DRIVEN_WHEEL_WIDTH}" radius="${DRIVEN_WHEEL_RADIUS}"/>
+                </geometry>
+                <material name="black">
+                    <color rgba="0 0 0 1.0"/>
+                </material>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder length="${DRIVEN_WHEEL_WIDTH}" radius="${DRIVEN_WHEEL_RADIUS}"/>
+                </geometry>
+            </collision>
+        </link>
+
+        <!-- Join chassis to wheel with an offset to account for DC rotor -->
+        <joint name="chassis_to_${prefix}_wheel_joint" type="continuous">
+            <parent link="chassis_link"/>
+            <child link="${prefix}_wheel_link"/>
+            <origin xyz="${DRIVEN_WHEEL_JOINT_X} ${joint_y} ${DRIVEN_WHEEL_JOINT_Z}" rpy="${joint_roll} 0 0"/>
+            <axis xyz="0 0 1"/>
+            <limit effort="${MOTOR_MAX_TORQUE}" velocity="${MAX_LINEAR_VELOCITY / DRIVEN_WHEEL_RADIUS}"/>
+        </joint>
+
+        <xacro:if value="${use_control}">
+            <!-- Transmission for control -->
+            <transmission name="${prefix}_wheel_trans">
+                <type>transmission_interface/SimpleTransmission</type>
+                <joint name="chassis_to_${prefix}_wheel_joint"/>
+                <actuator name="${prefix}_motor">
+                    <mechanicalReduction>1</mechanicalReduction>
+                </actuator>
+            </transmission>
+        </xacro:if>
+
+    </xacro:macro>
+
+</robot>
