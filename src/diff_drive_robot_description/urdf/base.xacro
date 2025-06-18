@@ -8,7 +8,7 @@
     <xacro:property name="CHASSIS_LENGTH" value="0.15"/>  <!-- Along x axis -->
     <xacro:property name="CHASSIS_WIDTH" value="0.10"/>  <!-- Along y axis -->
     <xacro:property name="CHASSIS_HEIGHT" value="0.10"/>  <!-- Along z axis -->
-    <xacro:property name="CHASSIS_MASS" value="2.0"/>
+    <xacro:property name="CHASSIS_MASS" value="4.75"/>
     <!-- Caster constants (JOINT_Y left out because the joint is centered along chassis width) -->
     <xacro:property name="CASTER_RADIUS" value="0.014"/>
     <xacro:property name="CASTER_JOINT_X" value="${CHASSIS_LENGTH / 4}"/>
