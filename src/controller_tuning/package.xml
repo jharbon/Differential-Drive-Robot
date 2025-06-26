@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>controller_tuning</name>
+  <version>0.1.0</version>
+  <description>Scripts for generating, publishing, logging, and analysing data to tune controllers</description>
+  <maintainer email="jharbon299@gmail.com">James Harbon</maintainer>
+  <license>MIT</license>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rcl_interfaces</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>tf_transformations</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
