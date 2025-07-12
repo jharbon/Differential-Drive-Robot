@@ -1,9 +1,14 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
     <!-- Define ros2_control hardware, command, and state interfaces -->
-    <ros2_control name="GazeboSimSystem" type="system">
+    <ros2_control name="RobotSystem" type="system">
         <hardware>
-            <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+            <xacro:if value="${hardware_type == 'real'}">
+                <plugin>mock_components/GenericSystem</plugin>
+            </xacro:if>
+            <xacro:if value="${hardware_type == 'simulated'}">
+                <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+            </xacro:if>
         </hardware>
         <joint name="chassis_to_left_wheel_joint">
             <command_interface name="velocity"/>
@@ -17,11 +22,13 @@
         </joint>
     </ros2_control>
 
-    <!-- Specify Gazebo control plugin -->
-    <gazebo>
-        <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
-            <parameters>${controllers_config_path}</parameters>
-        </plugin>
-    </gazebo>
+    <xacro:if value="${hardware_type == 'simulated'}">
+        <!-- Specify Gazebo control plugin -->
+        <gazebo>
+            <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+                <parameters>${controller_config_path}</parameters>
+            </plugin>
+        </gazebo>
+    </xacro:if>
 
 </robot>
