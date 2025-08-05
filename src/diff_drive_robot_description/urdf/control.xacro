@@ -25,7 +25,7 @@
     <xacro:if value="${hardware_type == 'simulated'}">
         <!-- Specify Gazebo control plugin -->
         <gazebo>
-            <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+            <plugin filename="libgz_ros2_pid_plugin.so" name="gz_ros2_pid::GazeboRos2PidPlugin">
                 <parameters>${controller_config_path}</parameters>
             </plugin>
         </gazebo>

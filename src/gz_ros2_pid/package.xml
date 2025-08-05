@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>gz_ros2_pid</name>
+  <version>0.1.0</version>
+  <description>The GazeboRos2PidPlugin extends the GazeboSimROS2ControlPlugin hardware interface with PID velocity control of joints. PID gains can be set via parameters.</description>
+  <maintainer email="jharbon299@gmail.com">James Harbon</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>controller_manager</depend>
+  <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
