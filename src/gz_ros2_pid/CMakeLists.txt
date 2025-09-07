@@ -12,6 +12,7 @@ find_package(controller_manager REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(control_toolbox REQUIRED)
 
 # GZ_ROS2_CONTROL BASE PLUGIN LIBRARY
 
@@ -61,6 +62,7 @@ add_library(
   gz_ros2_pid_plugin
   SHARED
   src/gz_ros2_pid/gz_ros2_pid_plugin.cpp
+  src/gz_ros2_pid/gz_pid_system.cpp
 )
 
 target_link_libraries(
@@ -83,6 +85,7 @@ ament_target_dependencies(
   hardware_interface
   pluginlib
   rclcpp
+  control_toolbox
 )
 
 ament_export_libraries(gz_ros2_pid_plugin)
@@ -91,6 +94,16 @@ install(
   TARGETS gz_ros2_pid_plugin
   LIBRARY
   DESTINATION lib
+)
+
+# Make gz_ros2_pid::GazeboPidSimSystem plugin discoverable by pluginlib
+pluginlib_export_plugin_description_file(
+  gz_ros2_control  # Export under same namespace as GazeboSimSystemInterface to enable discovery by gz_ros2_control::GZResourceManager
+  plugin_description.xml
+)
+install(
+  FILES plugin_description.xml
+  DESTINATION share/gz_ros2_pid
 )
 
 ament_package()

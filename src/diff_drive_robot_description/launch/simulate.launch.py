@@ -17,6 +17,7 @@ from launch_ros.actions import Node
 DESCRIPTION_PACKAGE_NAME = "diff_drive_robot_description"
 PUBLISH_DESCRIPTION_REL_PATH = os.path.join("launch", "publish_description.launch.py")
 GZ_SIM_PACKAGE_NAME = "ros_gz_sim"
+GZ_WORLD_REL_PATH = os.path.join("worlds", "custom_world.sdf")
 MODEL_SPAWN_NAME = "diff_drive_robot"
 GZ_BRIDGE_PACKAGE_NAME = "ros_gz_bridge"
 
@@ -63,7 +64,13 @@ def generate_launch_description():
     )
     
     run_sim_flag = PythonExpression(["'-r' if '", LaunchConfiguration("run_sim"), "' == 'true' else ''"])
-    gz_args = PythonExpression(["'", run_sim_flag, " -v 4 empty.sdf'"])
+    gz_args = PythonExpression([
+        "'",
+        run_sim_flag,
+        " -v 4 ",
+        os.path.join(get_package_share_directory(DESCRIPTION_PACKAGE_NAME), GZ_WORLD_REL_PATH),
+        "'"
+    ])
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory(GZ_SIM_PACKAGE_NAME), "launch", "gz_sim.launch.py")

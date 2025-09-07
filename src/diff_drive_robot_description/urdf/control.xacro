@@ -7,7 +7,7 @@
                 <plugin>mock_components/GenericSystem</plugin>
             </xacro:if>
             <xacro:if value="${hardware_type == 'simulated'}">
-                <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+                <plugin>gz_ros2_pid/GazeboPidSimSystem</plugin>
             </xacro:if>
         </hardware>
         <joint name="chassis_to_left_wheel_joint">

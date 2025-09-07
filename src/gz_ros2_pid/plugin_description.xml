@@ -1,0 +1,11 @@
+<library path="libgz_ros2_pid_plugin">
+    <class
+        name="gz_ros2_pid/GazeboPidSimSystem"
+        type="gz_ros2_pid::GazeboPidSimSystem"
+        base_class_type="gz_ros2_control::GazeboSimSystemInterface"
+    >
+        <description>
+            Extension of gz_ros2_control::GazeboSimSystem that implements PID velocity control.
+        </description>
+    </class>
+</library>
