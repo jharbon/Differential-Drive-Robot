@@ -18,6 +18,7 @@ DESCRIPTION_PACKAGE_NAME = "diff_drive_robot_description"
 PUBLISH_DESCRIPTION_REL_PATH = os.path.join("launch", "publish_description.launch.py")
 GZ_SIM_PACKAGE_NAME = "ros_gz_sim"
 GZ_WORLD_REL_PATH = os.path.join("worlds", "custom_world.sdf")
+GZ_CONFIG_ENV_VAR = "GZ_GUI_CONFIG_PATH"
 MODEL_SPAWN_NAME = "diff_drive_robot"
 GZ_BRIDGE_PACKAGE_NAME = "ros_gz_bridge"
 
@@ -49,6 +50,9 @@ def generate_launch_description():
         description="Start the simulation running (true) or paused (false)",
         default_value="false"
     )
+    # Attempt to read Gazebo GUI config path from environment variable 
+    # Returns None if variable does not exist
+    gz_gui_config_path = os.environ.get(GZ_CONFIG_ENV_VAR)
 
     # Publish robot description using robot_state_publisher node
     publish_description = IncludeLaunchDescription(
@@ -63,9 +67,14 @@ def generate_launch_description():
         ]
     )
     
-    run_sim_flag = PythonExpression(["'-r' if '", LaunchConfiguration("run_sim"), "' == 'true' else ''"])
+    if gz_gui_config_path is not None:
+        gz_gui_config_flag = "--gui-config {}".format(gz_gui_config_path)
+    else:
+        gz_gui_config_flag = ""
+    run_sim_flag = PythonExpression(["' -r' if '", LaunchConfiguration("run_sim"), "' == 'true' else ''"])
     gz_args = PythonExpression([
         "'",
+        gz_gui_config_flag,
         run_sim_flag,
         " -v 4 ",
         os.path.join(get_package_share_directory(DESCRIPTION_PACKAGE_NAME), GZ_WORLD_REL_PATH),
