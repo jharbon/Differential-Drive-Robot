@@ -90,6 +90,20 @@ public:
     sim::EntityComponentManager & _ecm,
     unsigned int update_rate) = 0;
 
+  // Overload initSim with extra node handle to enable hardware interface to read
+  // configuration values from parameters
+  virtual bool initSim(
+    rclcpp::Node::SharedPtr& model_nh,
+    std::map<std::string, sim::Entity>& joints,
+    const hardware_interface::HardwareInfo& hardware_info,
+    sim::EntityComponentManager& _ecm,
+    unsigned int update_rate,
+    rclcpp::Node::SharedPtr&) {
+      // Return 5-argument by default to avoid having to override this 
+      // version when only 5-argument is needed
+      return initSim(model_nh, joints, hardware_info, _ecm, update_rate);
+    }
+
   // Methods used to control a joint.
   enum ControlMethod_
   {

@@ -33,3 +33,14 @@ diff_drive_controller:
       z: 
         max_velocity: 2.0  # rad/s
         min_velocity: -2.0  # rad/s
+
+# Set PID controller configuration
+gz_ros2_pid:
+  ros__parameters:
+    p_gain: 0.5
+    i_gain: 0.0
+    d_gain: 0.0
+    i_max: 0.1
+    i_min: -0.1
+    effort_clamp: 0.3
+    deadband_threshold: 0.03 
