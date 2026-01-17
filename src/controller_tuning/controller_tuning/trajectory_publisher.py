@@ -1,25 +1,13 @@
+from controller_tuning.trajectory_generator import sinusoid_velocity_profile, circle_velocity_profile, TrajectoryGenerator
+from controller_tuning.trajectory_utils import Pose5, VelCmd
+
 import rclpy
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType 
 from rclpy.qos import qos_profile_default
 from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion, Twist, Vector3
 from tf_transformations import quaternion_from_euler
-from controller_tuning.trajectory_generator import sinusoid_velocity_profile, circle_velocity_profile, TrajectoryGenerator
-from controller_tuning.trajectory_utils import Pose5, VelCmd
 
-# Defaults for topics and publishing
-REFERENCE_TOPIC = "/reference_trajectory"
-REFERENCE_TYPE = "sinusoid"
-COMMAND_TOPIC = "/cmd_vel"
-PUBLISH_FREQUENCY = 10  # Hz
-POSE_FRAME_ID = "odom"
-
-# Defaults for general trajectory constraints
-TIME_DELTA = 1 / PUBLISH_FREQUENCY  # s
-MAX_VELOCITY = 0.5  # m/s
-MIN_VELOCITY = -0.5  # m/s
-MAX_ANGULAR_VELOCITY = 2.0  # rad/s
-N_POINTS = 100  # Number of points defining trajectory
 
 # Defaults for initial position and orientation
 INIT_X = 0  # m
@@ -27,10 +15,25 @@ INIT_Y = 0  # m
 INIT_Z = 0  # m
 INIT_YAW = 0  # rad 
 
+# Topics and publishing
+REFERENCE_TOPIC = "/reference_trajectory"
+COMMAND_TOPIC = "/cmd_vel"
+PUBLISH_FREQUENCY = 10  # Hz - determines time delta for trajectory
+POSE_FRAME_ID = "odom"  # For Pose msg
+# Defaults for general trajectory constraints
+MAX_VELOCITY = 0.5  # m/s
+MIN_VELOCITY = -0.5  # m/s
+MAX_ANGULAR_VELOCITY = 2.0  # rad/s
+N_POINTS = 100  # Number of points defining trajectory
+
+# Names of trajectory types
+SINUSOID_TRAJECTORY_NAME = "sinusoid"
+CIRCLE_TRAJECTORY_NAME = "circle"
+
 
 class TrajectoryPublisher(Node):
     """
-    ROS 2 node which generates a trajectory using the TrajectoryGenerator class, uses a timer to
+    ROS 2 node which generates a 2D trajectory using the TrajectoryGenerator class, uses a timer to
     synchronously publish the reference pose (time + position + yaw) and velocity commands to 
     respective topics, and shuts itself down when the full trajectory has been published.
 
@@ -38,70 +41,78 @@ class TrajectoryPublisher(Node):
     def __init__(self):
         super().__init__("trajectory_publisher")
 
-        # Topics
+        # Mandatory
         self.declare_parameter(
-            name="reference_topic",
-            descriptor=ParameterDescriptor(
-                description="The topic to publish reference trajectory PoseStamped on",
-                type=ParameterType.PARAMETER_STRING
-            ),
-            value=REFERENCE_TOPIC
-        )
-        self.declare_parameter(
-            name="command_topic",
-            descriptor=ParameterDescriptor(
-                description="The topic to publish reference trajectory Twist commands on",
-                type=ParameterType.PARAMETER_STRING
-            ),
-            value=COMMAND_TOPIC
-        )
-        self.declare_parameter(
-            name="publish_frequency",
-            descriptor=ParameterDescriptor(
-                description="The frequency (Hz) at which to publish reference trajectory points and velocity commands",
-                type=ParameterType.PARAMETER_DOUBLE
-            ),
-            value=PUBLISH_FREQUENCY
-        )
-        self.declare_parameter(
-            name="reference_type",
+            name="trajectory_type",
+            value="",  # Signals that no trajectory type was provided
             descriptor=ParameterDescriptor(
                 description="The type of trajectory ('sinusoid' or 'circle') to generate for the reference",
                 type=ParameterType.PARAMETER_STRING
-            ),
-            value=REFERENCE_TYPE
+            )
+        )
+        # Check if value was provided
+        if not self.get_parameter("trajectory_type").value:
+            raise RuntimeError(
+                "Parameter 'trajectory_type' must be set to either '{}' or '{}'"
+                .format(SINUSOID_TRAJECTORY_NAME, CIRCLE_TRAJECTORY_NAME)
+            )
+
+        # Optional
+        self.declare_parameter(
+            name="reference_topic",
+            value=REFERENCE_TOPIC,
+            descriptor=ParameterDescriptor(
+                description="The topic to publish reference trajectory PoseStamped on",
+                type=ParameterType.PARAMETER_STRING
+            )
+        )
+        self.declare_parameter(
+            name="command_topic",
+            value=COMMAND_TOPIC,
+            descriptor=ParameterDescriptor(
+                description="The topic to publish reference trajectory Twist commands on",
+                type=ParameterType.PARAMETER_STRING
+            )
+        )
+        self.declare_parameter(
+            name="publish_frequency",
+            value=PUBLISH_FREQUENCY,
+            descriptor=ParameterDescriptor(
+                description="The frequency (Hz) at which to publish reference trajectory points and velocity commands",
+                type=ParameterType.PARAMETER_DOUBLE
+            )
         )
         self.declare_parameter(
             name="max_velocity",
+            value=MAX_VELOCITY,
             descriptor=ParameterDescriptor(
                 description="The maximum size of linear velocity commands for each point on the trajectory",
                 type=ParameterType.PARAMETER_DOUBLE
-            ),
-            value=MAX_VELOCITY
+            )
         )
         self.declare_parameter(
             name="min_velocity",
+            value=MIN_VELOCITY,
             descriptor=ParameterDescriptor(
                 description="The minimum size of linear velocity commands for each point on the trajectory",
                 type=ParameterType.PARAMETER_DOUBLE
-            ),
-            value=MIN_VELOCITY
+            )
         )
         self.declare_parameter(
             name="max_angular_velocity",
+            value=MAX_ANGULAR_VELOCITY,
             descriptor=ParameterDescriptor(
                 description="The maximum size of angular velocity commands for each point on the trajectory",
                 type=ParameterType.PARAMETER_DOUBLE
-            ),
-            value=MAX_ANGULAR_VELOCITY
+            )
         )
         self.declare_parameter(
             name="n_points",
+            value=N_POINTS,
             descriptor=ParameterDescriptor(
                 description="The number of points used to define the trajectory",
                 type=ParameterType.PARAMETER_INTEGER
-            ),
-            value=N_POINTS
+            )
         )
 
         if self.get_parameter(name="n_points").value < 2:
@@ -128,13 +139,13 @@ class TrajectoryPublisher(Node):
         )
 
         # Generate velocity profile
-        reference_type = self.get_parameter("reference_type").value
+        trajectory_type = self.get_parameter("trajectory_type").value
         n_vels = self.get_parameter("n_points").value - 1
         max_velocity = self.get_parameter("max_velocity").value
         min_velocity = self.get_parameter("min_velocity").value
         max_angular_velocity = self.get_parameter("max_angular_velocity").value
-        self.get_logger().info("Generating {} velocity profile...".format(reference_type))
-        if reference_type == "sinusoid":
+        self.get_logger().info("Generating {} velocity profile...".format(trajectory_type))
+        if trajectory_type == SINUSOID_TRAJECTORY_NAME:
             v_profile = sinusoid_velocity_profile(
                 n=n_vels,
                 max_v=max_velocity,
@@ -143,13 +154,13 @@ class TrajectoryPublisher(Node):
             self.get_logger().info(
                 "Generated {} velocity profile with number of velocities = {}, max velocity = {}, and min velocity = {}"
                 .format(
-                    reference_type,
+                    trajectory_type,
                     len(v_profile),
                     max_velocity,
                     min_velocity
                 )
             )
-        elif reference_type == "circle":
+        elif trajectory_type == CIRCLE_TRAJECTORY_NAME:
             v_profile = circle_velocity_profile(
                 n=n_vels,
                 linear_v=max_velocity,
@@ -158,14 +169,14 @@ class TrajectoryPublisher(Node):
             self.get_logger().info(
                 "Generated {} velocity profile with number of velocities = {}, linear velocity = {}, and angular velocity = {}"
                 .format(
-                    reference_type,
+                    trajectory_type,
                     len(v_profile),
                     max_velocity,
                     max_angular_velocity
                 )
             )
         else:
-            raise ValueError("{} is an unrecognised reference trajectory type. Recognised types are: ('sinusoid', 'circle')".format(reference_type))
+            raise ValueError("{} is an unrecognised reference trajectory type. Recognised types are: ('sinusoid', 'circle')".format(trajectory_type))
 
         init_pose = Pose5(
             t=0,
@@ -185,7 +196,7 @@ class TrajectoryPublisher(Node):
         self.get_logger().info(
             "Generated {} trajectory with time delta = {}, initial point (t, x, y, z, yaw) = ({}, {}, {}, {}, {}), and number of points = {}"
             .format(
-                reference_type,
+                trajectory_type,
                 t_delta,
                 init_pose.t,
                 init_pose.x,
@@ -217,7 +228,8 @@ class TrajectoryPublisher(Node):
             self.idx_trajectory += 1
         else:
             # Full trajectory has been published - shut down node
-            self.get_logger().info("Full trajectory has been published. Node shutting down...")
+            self.get_logger().info("Full trajectory has been published. Shutting down...")
+            self.destroy_node()
             rclpy.shutdown()
 
     def publish_trajectory_pose(self, trajectory_pose: Pose5) -> None:
@@ -280,6 +292,7 @@ def main(args=None):
     Entry point for TrajectoryPublisher node.
 
     """
+    # Shutdown is automatically triggered when full trajectory has been published
     rclpy.init(args=args)
     rclpy.spin(TrajectoryPublisher())
 
