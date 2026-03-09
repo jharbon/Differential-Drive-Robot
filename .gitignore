@@ -5,4 +5,5 @@ log/
 
 # IDE
 .vscode/
+**/__pycache__/
 compile_commands.json

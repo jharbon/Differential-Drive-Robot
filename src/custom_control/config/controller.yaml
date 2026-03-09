@@ -17,8 +17,8 @@ diff_drive_controller:
     wheel_separation: 0.12  # m
     wheel_radius: 0.03  # m
 
-    publish_rate: 50.0  # Hz
-    cmd_vel_timeout: 2.0  # s - how long to wait before stopping robot if no /cmd_vel msg received 
+    publish_rate: 100.0  # Hz
+    cmd_vel_timeout: 0.5  # s - how long to wait before stopping robot if no /cmd_vel msg received 
     
 
     linear:
@@ -33,6 +33,9 @@ diff_drive_controller:
       z: 
         max_velocity: 2.0  # rad/s
         min_velocity: -2.0  # rad/s
+
+        max_acceleration: 4.0  # rad/s^2
+        min_acceleration: -4.0  # rad/s^2
 
 # Set PID controller configuration
 gz_ros2_pid:
